@@ -19,7 +19,7 @@ app.use(cors())
 app.use(express.json())
 
 
-const verifyFireBaseToken = (req, res, next) =>{
+const verifyFireBaseToken = async(req, res, next) =>{
     if(!req.headers.authorization){
         return res.status(401).send({message:'unauthorized access'})
     }
@@ -29,6 +29,12 @@ const verifyFireBaseToken = (req, res, next) =>{
     }
 
     // verify id token
+    try {
+        await admin.auth().verifyIdToken(token);
+        
+    } catch (error) {
+        
+    }
 
 }
 
