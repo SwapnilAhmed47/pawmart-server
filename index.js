@@ -8,11 +8,11 @@ const port = process.env.PORT || 3000
 
 
 
-// var serviceAccount = require("path/to/serviceAccountKey.json");
+var serviceAccount = require("./pawmart-admin-private-key.json");
 
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount)
-// });
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 // middleWare
 app.use(cors())
