@@ -30,13 +30,18 @@ const verifyFireBaseToken = async(req, res, next) =>{
 
     // verify id token
     try {
-        await admin.auth().verifyIdToken(token);
-        
+        const userInfo = await admin.auth().verifyIdToken(token);
+        console.log(userInfo)
+        req.token_email = userInfo.email
+        console.log("My Email",req.token_email)
+        next()
     } catch (error) {
         
     }
 
 }
+
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.cnb6fbt.mongodb.net/?appName=Cluster0`;
 
@@ -57,10 +62,26 @@ async function run() {
         const listingsCollection = db.collection('listing')
         const ordersCollection = db.collection('orders')
 
-        app.get('/products', async (req, res) => {
+        // search api
+        app.get('/search', async(req, res)=>{
+            const searchText = req.query.search
+            const result = await listingsCollection.find({name : {$regex: searchText, $options: "i"}}).toArray()
+            res.send(result)
+        })
+
+        app.get('/all-products', async(req, res)=>{
+            const cursor = listingsCollection.find()
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
+        app.get('/products', verifyFireBaseToken,  async (req, res) => {
             const email = req.query.email
             const query = {}
             if (email) {
+                if(email !== req.token_email){
+                    return res.status(403).send({message : 'forbidden Access'})
+                }
                 query.email = email
             }
             const cursor = listingsCollection.find(query)
@@ -74,8 +95,9 @@ async function run() {
             res.send(result)
         })
 
-        app.patch('/products/:id', async (req, res) => {
+        app.patch('/products/:id',  async (req, res) => {
             const id = req.params.id
+            const email = req.body.email
             const query = { _id: new ObjectId(id) }
             const newProduct = req.body
             const update = {
@@ -89,12 +111,13 @@ async function run() {
                     date: newProduct.date
                 }
             }
+            
             const result = await listingsCollection.updateOne(query, update)
             res.send(result)
 
         })
 
-        app.get('/products/:id', async (req, res) => {
+        app.get('/products/:id',  async (req, res) => {
             const id = req.params.id
             const query = {
                 _id: new ObjectId(id)
